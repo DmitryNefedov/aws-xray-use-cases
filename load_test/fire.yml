@@ -1,0 +1,12 @@
+config:
+  target: '{{ $processEnvironment.HOST }}'
+  phases:
+    - duration: 40
+      arrivalRate: 40
+  defaults:
+    headers:
+      x-api-key: "{{ $processEnvironment.API_KEY }}"
+scenarios:
+  - flow:
+      - get:
+          url: "/hello?orgId=org1"

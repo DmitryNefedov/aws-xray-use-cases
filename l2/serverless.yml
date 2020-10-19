@@ -1,0 +1,63 @@
+service:
+  name: l2
+
+custom:
+  l3Host: ${env:L3_HOST}
+  l3Key: ${env:L3_KEY}
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, 'ap-southeast-2'}
+  stage: ${opt:stage, env:STAGE}
+  timeout: 30
+  memorySize: 128
+  apiKeys:
+    - l2Key
+  tracing:
+    apiGateway: true
+    lambda: true
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    L3_HOST: ${self:custom.l3Host}
+    L3_KEY: ${self:custom.l3Key}
+    USER_TABLE: orgTable-${self:provider.stage}
+
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess'
+    - 'arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess'
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          method: get
+          path: hello
+          private: true
+
+
+resources:
+  Resources:
+    orgTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: orgTable-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: org
+            AttributeType: S
+        KeySchema:
+          - AttributeName: org
+            KeyType: HASH
+        # make is small so we could throttle it
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

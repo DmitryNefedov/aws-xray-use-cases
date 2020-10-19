@@ -1,0 +1,38 @@
+service: l3
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, 'ap-southeast-2'}
+  stage: ${opt:stage, env:STAGE}
+  timeout: 30
+  memorySize: 128
+  tracing:
+    apiGateway: true
+    lambda: true
+
+  environment:
+    SW_HOST: 'https://reqres.in/api/users'
+
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess'
+
+  apiKeys:
+    - l3Key
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+          private: true
